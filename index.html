@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AEX LINK</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Righteous&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                        stylish: ['Righteous', 'sans-serif'], 
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Base Styling */
+        html, body {
+            font-family: 'Poppins', sans-serif !important;
+            overflow-x: hidden; 
+        }
+
+        /* Glassmorphism for Light & Dark Mode */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+        }
+        
+        .dark .glass-panel {
+            background: rgba(30, 41, 59, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .glass-button {
+            background: rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .dark .glass-button {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .glass-button:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.6);
+        }
+        
+        .dark .glass-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .accordion-content {
+            transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+        }
+        .accordion-content.open {
+            max-height: 2000px; 
+            opacity: 1;
+        }
+        .rotate-arrow {
+            transition: transform 0.3s ease;
+        }
+        .rotate-arrow.open {
+            transform: rotate(180deg);
+        }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.5); border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb { background: rgba(71, 85, 105, 0.5); }
+        
+        .card-overlay {
+            position: absolute; inset: -4px;
+            background: rgba(255,255,255,0.85);
+            border-radius: 1rem;
+            display: flex; justify-content: center; align-items: center; gap: 10px;
+            opacity: 0; transition: opacity 0.2s; z-index: 10;
+            backdrop-filter: blur(2px);
+        }
+        .dark .card-overlay { background: rgba(0,0,0,0.75); }
+        
+        .group.edit-active:hover .card-overlay { opacity: 1; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-slate-50 text-gray-800 dark:bg-slate-900 dark:text-gray-100 transition-colors duration-300 min-h-screen flex flex-col relative selection:bg-brand-500 selection:text-white">
+
+    <div id="customModal" class="hidden fixed inset-0 z-[200] bg-black/40 dark:bg-black/60 backdrop-blur-sm flex justify-center items-center">
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-2xl max-w-sm w-full mx-4 border border-gray-200 dark:border-gray-700" id="modalContent">
+            <h3 id="modalTitle" class="text-xl font-bold mb-4 text-gray-800 dark:text-white">Title</h3>
+            <div id="modalInputs" class="space-y-4 mb-6"></div>
+            <div class="flex justify-end gap-3">
+                <button onclick="window.closeModal()" class="px-5 py-2.5 rounded-xl font-medium bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">Cancel</button>
+                <button id="modalSaveBtn" class="px-5 py-2.5 rounded-xl font-medium bg-brand-500 text-white hover:bg-brand-600 transition-colors">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="settingsModal" class="hidden fixed inset-0 z-[200] bg-black/40 dark:bg-black/60 backdrop-blur-sm flex justify-center items-center">
+        <div class="bg-white dark:bg-slate-800 p-8 rounded-[2rem] shadow-2xl max-w-md w-full mx-4 border border-gray-200 dark:border-gray-700">
+            <div class="flex justify-between items-center mb-6 border-b border-gray-200 dark:border-gray-700 pb-3">
+                <h3 class="text-2xl font-bold text-gray-800 dark:text-white font-stylish flex items-center gap-2">
+                    <svg class="w-6 h-6 animate-[spin_4s_linear_infinite]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    Settings & Backup
+                </h3>
+                <button onclick="window.closeSettings()" class="text-gray-400 hover:text-red-500 transition-colors p-2 bg-gray-100 dark:bg-gray-700 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+
+            <div class="space-y-6">
+                <div class="p-5 bg-gray-50 dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-gray-800">
+                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wide">Offline JSON Backup</label>
+                    <p class="text-[13px] text-gray-500 dark:text-gray-400 mb-4">Securely backup your links. Importing a backup will safely <b>merge</b> it with existing data without deleting anything.</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="window.exportLocalBackup()" class="py-3 px-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 shadow-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            Export
+                        </button>
+                        <label class="py-3 px-3 bg-brand-500 hover:bg-brand-600 text-white rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                            Merge JSON
+                            <input type="file" id="importFileInput" class="hidden" accept=".json" onchange="window.importLocalBackup(event)">
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <header class="fixed top-0 left-0 right-0 h-20 glass-panel z-50 flex items-center justify-between px-4 md:px-8">
+        <div class="flex items-center gap-3">
+            <div class="p-2 bg-brand-500 rounded-xl hidden sm:flex">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+            </div>
+            <h1 class="text-[1.35rem] sm:text-2xl tracking-wide font-stylish text-brand-600 dark:text-brand-400 pt-1 uppercase">AEX LINK</h1>
+        </div>
+
+        <div class="flex items-center gap-2 md:gap-4">
+            <button onclick="window.openSettings()" class="glass-button p-2.5 sm:p-3 rounded-full text-gray-700 dark:text-gray-200 hover:text-brand-600 dark:hover:text-brand-400" title="Settings & Backup">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            </button>
+            <button onclick="window.toggleTheme()" class="glass-button p-2.5 sm:p-3 rounded-full text-gray-700 dark:text-gray-200" title="Toggle Theme">
+                <svg id="sunIcon" class="w-5 h-5 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                <svg id="moonIcon" class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+            </button>
+            <button onclick="window.toggleEdit()" id="editToggle" class="glass-button p-2.5 sm:p-3 rounded-full relative group text-gray-700 dark:text-gray-200" title="Edit Mode">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="group-[.active]:text-green-500"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                <span id="editIndicator" class="absolute top-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full hidden"></span>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-grow pt-24 pb-12 px-4 max-w-4xl mx-auto w-full relative z-10">
+        <div id="stickyTabsWrapper" class="sticky top-24 z-40 mb-6 transition-all duration-300 glass-panel rounded-[1.5rem]">
+            </div>
+
+        <div id="statusMessage" class="mb-4 p-3 rounded-xl text-center text-sm font-semibold glass-panel hidden transition-all duration-300"></div>
+        
+        <div id="appContainer" class="space-y-6 relative z-10"></div>
+    </main>
+
+    <script id="geoDataScript">
+        window.appData = {};
+        for(let i=1; i<=10; i++) {
+            let tabId = i < 10 ? `tab0${i}` : `tab${i}`;
+            window.appData[tabId] = {
+                id: tabId,
+                categories: []
+            };
+        }
+    </script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // =========================================================
+        // AEX LINK FIREBASE CONFIGURATION
+        // =========================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyBojCif-jrhZ2V3MQIqNY71Z5TndSQtuyI",
+            authDomain: "aex-link.firebaseapp.com",
+            projectId: "aex-link",
+            storageBucket: "aex-link.firebasestorage.app",
+            messagingSenderId: "792591324916",
+            appId: "1:792591324916:web:c23fdfd370fb46eae830a1"
+        };
+
+        const isFirebaseEnabled = firebaseConfig && firebaseConfig.apiKey !== "";
+        let db;
+
+        window.isEditMode = false;
+        window.currentTab = 'tab01'; 
+
+        // --- Custom Modal Logic ---
+        window.openModal = function(title, fields, onConfirm, isConfirmOnly = false) {
+            const modal = document.getElementById('customModal');
+            modal.classList.remove('hidden');
+            
+            document.getElementById('modalTitle').innerText = title;
+            const inputsDiv = document.getElementById('modalInputs');
+            inputsDiv.innerHTML = '';
+            
+            if (isConfirmOnly) {
+                inputsDiv.innerHTML = `<p class="text-gray-700 dark:text-gray-300 font-medium">${fields}</p>`;
+            } else {
+                fields.forEach((f, idx) => {
+                    inputsDiv.innerHTML += `
+                        <div class="mb-3">
+                            <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1 ml-1">${f.label}</label>
+                            <input type="${f.type || 'text'}" id="${f.id}" value="${f.value || ''}" placeholder="${f.placeholder || ''}" class="w-full p-3 rounded-xl bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-gray-700 focus:border-brand-500 outline-none text-gray-800 dark:text-white transition-all">
+                        </div>
+                    `;
+                });
+            }
+
+            const saveBtn = document.getElementById('modalSaveBtn');
+            saveBtn.innerText = isConfirmOnly ? 'Yes, Delete' : 'Save';
+            saveBtn.className = isConfirmOnly 
+                ? "px-5 py-2.5 rounded-xl font-bold bg-red-500 hover:bg-red-600 text-white transition-colors"
+                : "px-5 py-2.5 rounded-xl font-bold bg-brand-500 hover:bg-brand-600 text-white transition-colors";
+
+            const newSaveBtn = saveBtn.cloneNode(true);
+            saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
+
+            newSaveBtn.onclick = () => {
+                if (isConfirmOnly) {
+                    onConfirm();
+                } else {
+                    const results = {};
+                    let allValid = true;
+                    fields.forEach(f => {
+                        const el = document.getElementById(f.id);
+                        let val = el.value.trim();
+                        if(!val && f.required !== false) allValid = false;
+                        results[f.id] = val;
+                    });
+                    if(!allValid) return window.showStatus('Please fill required fields.', 'red');
+                    onConfirm(results);
+                }
+                window.closeModal();
+            };
+        };
+
+        window.closeModal = function() {
+            document.getElementById('customModal').classList.add('hidden');
+        };
+
+        // --- Settings & Backup Logic ---
+        window.openSettings = function() {
+            document.getElementById('settingsModal').classList.remove('hidden');
+        };
+
+        window.closeSettings = function() {
+            document.getElementById('settingsModal').classList.add('hidden');
+        };
+
+        window.exportLocalBackup = function() {
+            try {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.appData, null, 2));
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `aex_link_backup_${new Date().toISOString().slice(0,10)}.json`);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+                window.showStatus("Backup exported successfully!", "green");
+            } catch(e) {
+                window.showStatus("Backup export failed.", "red");
+            }
+        };
+
+        // --- SMART MERGE LOGIC ---
+        window.importLocalBackup = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsedData = JSON.parse(e.target.result);
+                    if (parsedData && typeof parsedData === 'object' && parsedData['tab01']) {
+                        let mergedAdditions = 0;
+
+                        Object.keys(parsedData).forEach(tabKey => {
+                            if (window.appData[tabKey] && parsedData[tabKey].categories) {
+                                parsedData[tabKey].categories.forEach(importedCat => {
+                                    let existingCat = window.appData[tabKey].categories.find(c => c.name.toLowerCase() === importedCat.name.toLowerCase());
+                                    
+                                    if (existingCat) {
+                                        if (importedCat.links) {
+                                            importedCat.links.forEach(importedLink => {
+                                                let linkExists = existingCat.links.some(l => l.url.toLowerCase() === importedLink.url.toLowerCase());
+                                                if (!linkExists) {
+                                                    existingCat.links.push(importedLink);
+                                                    mergedAdditions++;
+                                                }
+                                            });
+                                        }
+                                    } else {
+                                        window.appData[tabKey].categories.push(importedCat);
+                                        mergedAdditions++;
+                                    }
+                                });
+                            }
+                        });
+
+                        render();
+                        window.saveDataToCloud(); 
+                        
+                        if (mergedAdditions > 0) {
+                            window.showStatus("Backup merged successfully!", "green");
+                        } else {
+                            window.showStatus("No new data to merge.", "gray");
+                        }
+                        window.closeSettings();
+                    } else {
+                        window.showStatus("Invalid backup format.", "red");
+                    }
+                } catch (err) {
+                    window.showStatus("Failed to parse file.", "red");
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = ''; 
+        };
+
+        // --- Theme Logic ---
+        window.toggleTheme = function() { window.setDarkMode(!window.isDarkMode); };
+
+        window.setDarkMode = function(value) {
+            window.isDarkMode = value;
+            const sunIcon = document.getElementById('sunIcon');
+            const moonIcon = document.getElementById('moonIcon');
+            if (window.isDarkMode) {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                if(sunIcon) sunIcon.classList.remove('hidden');
+                if(moonIcon) moonIcon.classList.add('hidden');
+            } else {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+                if(sunIcon) sunIcon.classList.add('hidden');
+                if(moonIcon) moonIcon.classList.remove('hidden');
+            }
+        };
+
+        // --- Initialization ---
+        async function initApp() {
+            // Setup Theme
+            if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                window.setDarkMode(true);
+            } else {
+                window.setDarkMode(false);
+            }
+
+            if (!window.appData[window.currentTab]) window.currentTab = Object.keys(window.appData)[0];
+            render();
+
+            if (isFirebaseEnabled) {
+                try {
+                    const app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    setupRealtimeData();
+                } catch (error) { 
+                    console.error("Firebase Init Error:", error); 
+                }
+            }
+        }
+
+        // --- Data Sync ---
+        function getFirebaseDocRef() {
+            return doc(db, 'aex_link_data', 'master_list');
+        }
+
+        function setupRealtimeData() {
+            if (!db) return;
+            const docRef = getFirebaseDocRef();
+
+            onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists() && docSnap.data().appData) {
+                    let incomingData = docSnap.data().appData;
+                    
+                    Object.keys(window.appData).forEach(localTabKey => {
+                        if (incomingData[localTabKey]) {
+                            incomingData[localTabKey].categories.forEach(incCat => {
+                                const localCat = window.appData[localTabKey].categories.find(c => c.name === incCat.name);
+                                if (localCat) incCat.isOpen = localCat.isOpen; 
+                            });
+                            window.appData[localTabKey].categories = incomingData[localTabKey].categories;
+                        }
+                    });
+
+                    if(!window.appData[window.currentTab]) window.currentTab = Object.keys(window.appData)[0];
+                    render();
+                } else {
+                    window.saveDataToCloud();
+                }
+            }, (error) => {
+                console.error("Firestore Error:", error);
+            });
+        }
+
+        window.saveDataToCloud = async function() {
+            if (isFirebaseEnabled && db) {
+                const docRef = getFirebaseDocRef();
+                try { await setDoc(docRef, { appData: window.appData }, { merge: true }); } 
+                catch (e) { console.error("Save error", e); }
+            }
+        };
+
+        // --- Helper Functions ---
+        function getDomain(url) {
+            try { return url.replace('https://','').replace('http://','').replace('www.','').split('/')[0]; }
+            catch(e) { return "Link"; }
+        }
+
+        function stringToColor(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
+            return '#' + "00000".substring(0, 6 - c.length) + c;
+        }
+
+        // --- Dynamic Render Functions ---
+        function renderTabs() {
+            const tabsWrapper = document.getElementById('stickyTabsWrapper');
+            
+            if (tabsWrapper.children.length > 0) {
+                const buttons = tabsWrapper.querySelectorAll('button');
+                buttons.forEach(btn => {
+                    const sectionId = btn.getAttribute('data-target');
+                    if (window.currentTab === sectionId) {
+                        btn.className = "p-1 rounded-full transition-all flex items-center justify-center bg-brand-500 text-white z-10 relative shadow-md";
+                    } else {
+                        btn.className = "p-1 rounded-full transition-all flex items-center justify-center hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-500 dark:text-gray-400";
+                    }
+                });
+                return; 
+            }
+            
+            tabsWrapper.innerHTML = '';
+            const tabsContainer = document.createElement('div');
+            tabsContainer.className = "flex p-2 gap-3 overflow-x-auto w-fit max-w-full mx-auto no-scrollbar";
+            
+            const sectionsArray = Object.values(window.appData).sort((a, b) => {
+                const numA = parseInt(a.id.replace('tab', '')) || 0;
+                const numB = parseInt(b.id.replace('tab', '')) || 0;
+                return numA - numB;
+            });
+
+            sectionsArray.forEach(section => {
+                const num = parseInt(section.id.replace('tab', ''));
+                const isActive = window.currentTab === section.id;
+                const btn = document.createElement('button');
+                btn.setAttribute('data-target', section.id);
+                
+                if (isActive) {
+                    btn.className = "p-1 rounded-full transition-all flex items-center justify-center bg-brand-500 text-white z-10 relative shadow-md";
+                } else {
+                    btn.className = "p-1 rounded-full transition-all flex items-center justify-center hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-500 dark:text-gray-400";
+                }
+                
+                btn.onclick = () => { 
+                    window.currentTab = section.id; 
+                    renderTabs(); 
+                    renderContent(); 
+                };
+
+                btn.innerHTML = `<div class="w-10 h-10 rounded-full flex items-center justify-center border-[2px] border-current text-[1.1rem] font-bold pointer-events-none">${num}</div>`; 
+                tabsContainer.appendChild(btn);
+            });
+            tabsWrapper.appendChild(tabsContainer);
+        }
+
+        function renderContent() {
+            const appContainer = document.getElementById('appContainer');
+            appContainer.innerHTML = '';
+            
+            const section = window.appData[window.currentTab];
+            if (!section) return;
+
+            const sectionEl = document.createElement('div');
+            
+            if (window.isEditMode) {
+                const header = document.createElement('div');
+                header.className = "flex justify-end mb-4 px-1";
+                header.innerHTML = `<button onclick="window.addCategory('${section.id}')" class="text-sm bg-brand-500 text-white px-4 py-2 rounded-xl hover:bg-brand-600 font-semibold transition-all shadow-sm">+ New Category</button>`;
+                sectionEl.appendChild(header);
+            }
+
+            const catContainer = document.createElement('div');
+            catContainer.className = "space-y-4";
+            
+            section.categories.forEach((cat, catIndex) => {
+                const catWrapper = document.createElement('div');
+                catWrapper.className = "cat-wrapper glass-panel rounded-2xl overflow-hidden transition-all duration-300";
+                
+                const accHeader = document.createElement('button');
+                accHeader.className = "w-full flex items-center justify-between p-5 hover:bg-gray-100/50 dark:hover:bg-slate-800/50 transition-colors text-left outline-none";
+                accHeader.onclick = (e) => {
+                    if(e.target.closest('.edit-action')) return;
+                    window.toggleCategory(section.id, catIndex);
+                };
+
+                accHeader.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="font-bold text-[1.15rem] text-gray-800 dark:text-gray-100 tracking-wide">${cat.name}</span>
+                        ${window.isEditMode ? `
+                            <button onclick="window.editCategoryName('${section.id}', ${catIndex})" class="edit-action text-brand-500 hover:text-brand-600 p-2 bg-gray-200 dark:bg-slate-800 rounded-lg" title="Edit Name">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                            </button>
+                        ` : ''}
+                    </div>
+                    <div class="flex items-center gap-3">
+                        ${window.isEditMode ? `
+                            <button onclick="window.deleteCategory('${section.id}', ${catIndex})" class="edit-action text-red-500 hover:text-red-600 p-2 bg-gray-200 dark:bg-slate-800 rounded-lg" title="Delete Category">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            </button>
+                        ` : ''}
+                        <svg class="w-6 h-6 text-brand-500 dark:text-brand-400 rotate-arrow ${cat.isOpen ? 'open' : ''}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                `;
+                catWrapper.appendChild(accHeader);
+
+                const accBody = document.createElement('div');
+                accBody.className = `accordion-content ${cat.isOpen ? 'open' : ''}`;
+                
+                const innerContent = document.createElement('div');
+                innerContent.className = "p-5 pt-4 border-t border-gray-200/50 dark:border-gray-700/50";
+
+                if (cat.links.length > 0) {
+                    const grid = document.createElement('div');
+                    grid.className = "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4";
+                    
+                    cat.links.forEach((link, linkIndex) => {
+                        const cell = document.createElement('div');
+                        cell.className = `relative flex flex-col items-center p-2 rounded-xl hover:bg-gray-100/50 dark:hover:bg-slate-800/50 transition-all group ${window.isEditMode ? 'edit-active' : ''}`;
+                        
+                        const displayName = link.name || getDomain(link.url);
+                        const bgColor = stringToColor(displayName);
+                        let iconHtml = '';
+                        
+                        if (link.customIcon && link.customIcon.trim() !== '') {
+                            const displayIcon = Array.from(link.customIcon)[0]; 
+                            iconHtml = `<div class="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl pb-1 font-bold text-white shadow-md transition-transform group-hover:scale-105" style="background-color: ${bgColor}">${displayIcon}</div>`;
+                        } else {
+                            const iconUrl = `https://www.google.com/s2/favicons?domain=${link.url}&sz=128`;
+                            const fallbackLetter = Array.from(displayName)[0].toUpperCase();
+                            iconHtml = `
+                                <div class="w-14 h-14 rounded-2xl flex items-center justify-center bg-white shadow-md overflow-hidden transition-transform group-hover:scale-105 p-1 border border-gray-200">
+                                    <img src="${iconUrl}" alt="${fallbackLetter}" class="w-full h-full object-contain" onerror="this.parentNode.style.backgroundColor='${bgColor}'; this.parentNode.style.padding='0'; this.parentNode.innerHTML='<span class=\\'text-3xl pb-1 font-bold text-white\\'>${fallbackLetter}</span>';">
+                                </div>`;
+                        }
+
+                        let validUrl = link.url.startsWith('http') ? link.url : 'https://' + link.url;
+
+                        cell.innerHTML = `
+                            <a href="${validUrl}" target="_blank" class="flex flex-col items-center w-full outline-none">
+                                ${iconHtml}
+                                <span class="mt-2 text-xs font-semibold text-gray-700 dark:text-gray-300 text-center w-full truncate px-1">${displayName}</span>
+                            </a>
+                            ${window.isEditMode ? `
+                                <div class="card-overlay">
+                                    <button onclick="window.editLink('${section.id}', ${catIndex}, ${linkIndex})" class="w-8 h-8 rounded-full bg-yellow-400 text-black flex items-center justify-center hover:scale-110 shadow" title="Edit">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                                    </button>
+                                    <button onclick="window.deleteLink('${section.id}', ${catIndex}, ${linkIndex})" class="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:scale-110 shadow" title="Delete">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                    </button>
+                                </div>
+                            ` : ''}
+                        `;
+                        grid.appendChild(cell);
+                    });
+                    innerContent.appendChild(grid);
+                } else {
+                    innerContent.innerHTML += `<div class="text-sm text-gray-500 italic text-center py-4 bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">No links added.</div>`;
+                }
+
+                if (window.isEditMode) {
+                    const addBtn = document.createElement('button');
+                    addBtn.className = "mt-4 w-full py-3 text-[0.95rem] font-medium flex items-center justify-center gap-2 text-brand-600 dark:text-brand-400 bg-gray-50 hover:bg-gray-100 dark:bg-slate-800/50 dark:hover:bg-slate-700/50 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 transition-all";
+                    addBtn.innerHTML = `<span>+ Add Link</span>`;
+                    addBtn.onclick = () => window.addLink(section.id, catIndex);
+                    innerContent.appendChild(addBtn);
+                }
+
+                accBody.appendChild(innerContent);
+                catWrapper.appendChild(accBody);
+                catContainer.appendChild(catWrapper);
+            });
+
+            sectionEl.appendChild(catContainer);
+            appContainer.appendChild(sectionEl);
+        }
+
+        // Full Render 
+        function render() {
+            renderTabs();
+            renderContent();
+        }
+
+        // --- Actions ---
+        window.toggleCategory = function(sectionId, catIndex) {
+            const section = window.appData[sectionId];
+            const clickedCat = section.categories[catIndex];
+            const wasOpen = clickedCat.isOpen;
+
+            Object.values(window.appData).forEach(sec => sec.categories.forEach(c => c.isOpen = false));
+            clickedCat.isOpen = !wasOpen;
+
+            const allCatWrappers = document.querySelectorAll('.cat-wrapper');
+            allCatWrappers.forEach((wrapper, idx) => {
+                const content = wrapper.querySelector('.accordion-content');
+                const arrow = wrapper.querySelector('.rotate-arrow');
+                if (idx === catIndex && clickedCat.isOpen) {
+                    content.classList.add('open');
+                    arrow.classList.add('open');
+                } else {
+                    content.classList.remove('open');
+                    arrow.classList.remove('open');
+                }
+            });
+        };
+
+        window.addCategory = function(sectionId) {
+            window.openModal("New Category", [
+                { id: "catName", label: "Category Name", placeholder: "e.g., Tools, News..." }
+            ], (res) => {
+                window.appData[sectionId].categories.push({ name: res.catName, isOpen: true, links: [] });
+                window.saveDataToCloud(); 
+                renderContent();
+            });
+        };
+        
+        window.editCategoryName = function(sectionId, catIndex) {
+            const currentName = window.appData[sectionId].categories[catIndex].name;
+            window.openModal("Rename Category", [
+                { id: "catName", label: "Category Name", value: currentName }
+            ], (res) => {
+                window.appData[sectionId].categories[catIndex].name = res.catName;
+                window.saveDataToCloud();
+                renderContent();
+            });
+        };
+
+        window.deleteCategory = function(sectionId, catIndex) {
+            window.openModal("Warning", "Are you sure you want to delete this category and all its links?", () => {
+                window.appData[sectionId].categories.splice(catIndex, 1);
+                window.saveDataToCloud();
+                renderContent();
+            }, true);
+        };
+
+        window.addLink = function(sectionId, catIndex) {
+            window.openModal("Add New Link", [
+                { id: "locUrl", label: "URL (Link)", placeholder: "https://example.com" },
+                { id: "locName", label: "Name", placeholder: "Leave blank for auto-fetch", required: false },
+                { id: "customIcon", label: "Custom Icon (Emoji)", placeholder: "Enter an emoji", required: false }
+            ], (res) => {
+                let finalName = res.locName;
+                let finalUrl = res.locUrl;
+                if (!finalUrl.startsWith('http')) finalUrl = 'https://' + finalUrl;
+                if (!finalName) finalName = getDomain(finalUrl);
+
+                window.appData[sectionId].categories[catIndex].links.push({ 
+                    name: finalName, 
+                    url: finalUrl,
+                    customIcon: res.customIcon
+                });
+                window.saveDataToCloud();
+                renderContent();
+            });
+        };
+
+        window.editLink = function(sectionId, catIndex, linkIndex) {
+            const linkObj = window.appData[sectionId].categories[catIndex].links[linkIndex];
+            window.openModal("Edit Link", [
+                { id: "locUrl", label: "URL (Link)", value: linkObj.url },
+                { id: "locName", label: "Name", value: linkObj.name },
+                { id: "customIcon", label: "Custom Emoji", value: linkObj.customIcon || '', placeholder: "Enter emoji", required: false }
+            ], (res) => {
+                let finalUrl = res.locUrl;
+                if (!finalUrl.startsWith('http')) finalUrl = 'https://' + finalUrl;
+
+                linkObj.name = res.locName || getDomain(finalUrl);
+                linkObj.url = finalUrl;
+                linkObj.customIcon = res.customIcon;
+
+                window.saveDataToCloud();
+                renderContent();
+                window.showStatus('Link Updated', 'green');
+            });
+        };
+
+        window.deleteLink = function(sectionId, catIndex, linkIndex) {
+            window.openModal("Confirm", "Permanently delete this link?", () => {
+                window.appData[sectionId].categories[catIndex].links.splice(linkIndex, 1);
+                window.saveDataToCloud();
+                renderContent();
+            }, true);
+        };
+
+        window.toggleEdit = function() {
+            window.isEditMode = !window.isEditMode;
+            const editToggle = document.getElementById('editToggle');
+            const editIndicator = document.getElementById('editIndicator');
+            editToggle.classList.toggle('active');
+            
+            if (window.isEditMode) {
+                editIndicator.classList.remove('hidden');
+                editToggle.classList.add('bg-gray-200', 'dark:bg-slate-700');
+                window.showStatus('Edit Mode Active', 'green');
+            } else {
+                editIndicator.classList.add('hidden');
+                editToggle.classList.remove('bg-gray-200', 'dark:bg-slate-700');
+                window.showStatus('Edit Mode Disabled', 'gray');
+            }
+            renderTabs();
+            renderContent();
+        };
+
+        window.showStatus = function(msg, color) {
+            const statusMessage = document.getElementById('statusMessage');
+            statusMessage.textContent = msg;
+            statusMessage.className = `mb-6 p-3 rounded-xl text-center text-[0.95rem] font-semibold transform transition-all duration-300 scale-100 opacity-100 border ${
+                color === 'green' ? 'text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-800' :
+                color === 'red' ? 'text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-800' :
+                'text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700'
+            }`;
+            statusMessage.classList.remove('hidden');
+            setTimeout(() => {
+                statusMessage.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => statusMessage.classList.add('hidden'), 300);
+            }, 2500);
+        };
+
+        // Initialize Application
+        initApp();
+
+    </script>
+</body>
+</html>

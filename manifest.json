@@ -1,0 +1,20 @@
+{
+  "background_color": "#ffffff",
+  "dir": "ltr",
+  "display": "fullscreen",
+  "name": "Website Link Save",
+  "orientation": "any",
+  "scope": "/save/",
+  "short_name": "Link",
+  "start_url": "/save/",
+  "theme_color": "#ffffff",
+  "id": "https://aexsaoud.github.io/save/",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
+
